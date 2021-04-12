@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const ejs = require("ejs");
 const path = require("path");
+const ejsMate = require("ejs-mate");
 const mongoose = require("mongoose");
 const Campground = require("./models/campground");
 const methodOverride = require('method-override');
@@ -16,7 +17,8 @@ mongoose.connect("mongodb://localhost:27017/yelp-camp", { useNewUrlParser: true,
         console.log(err);
     });
 
-
+// tell express we want to use ejs-mate
+app.engine("ejs", ejsMate);
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
