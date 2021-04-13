@@ -2,36 +2,53 @@
     <div class="row">
         <h1 class="text-center">New Campground</h1>
         <div class="col-6 offset-3">
-            <form action="/campgrounds" method="POST">
+            <!-- add no validate to avoid default html behaviour and let bootstrap take over
+            to avoid submitting the form unless validated -->
+            <form action="/campgrounds" method="POST" class="needs-validation" novalidate>
                 <div class="mb-3">
                     <label class="form-label" for="title">Campground's name</label>
                     <!-- by adding name campground[title] it will create an object "campground" in req.body 
                         with properties title and next up location -->
                     <input class="form-control" type="text" id="title" name="campground[title]"
-                        placeholder="Insert a name">
+                        placeholder="Insert a name" required>
+                    <div class="valid-feedback">
+                        Looks good!
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label" for="location">Campground's location</label>
                     <input class="form-control" type="text" id="location" name="campground[location]"
-                        placeholder="Insert a location">
+                        placeholder="Insert a location" required>
+                    <div class="valid-feedback">
+                        Looks good!
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label" for="image">Campground's Image</label>
                     <input class="form-control" type="text" id="image" name="campground[image]"
-                        placeholder="Insert an image URL">
+                        placeholder="Insert an image URL" required>
+                    <div class="valid-feedback">
+                        Looks good!
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label" for="price">Campground's price</label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="price" placeholder="0.00" aria-label="Price"
-                            aria-describedby="price-label" name="campground[price]">
+                            aria-describedby="price-label" name="campground[price]" required>
                         <span class="input-group-text" id="price-label">€</span>
+                        <div class="valid-feedback">
+                            Looks good!
+                        </div>
                     </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label" for="description">Campground's description</label>
                     <textarea class="form-control" type="text" id="description" name="campground[description]"
-                        placeholder="Insert a description"></textarea>
+                        placeholder="Insert a description" required></textarea>
+                    <div class="valid-feedback">
+                        Looks good!
+                    </div>
                 </div>
                 <div class="mb-3">
                     <button type="submit" class="btn btn-success">Submit</button>
