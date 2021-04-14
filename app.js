@@ -14,7 +14,9 @@ const expressError = require("./utils/ExpressError");
 // Joi's import has been commented out, we import it through the next schemas file
 // const Joi = require("joi");
 // destructure since we might have multiple schemas in the file
-const { campgroundSchema } = require("./schemas");
+const { campgroundSchema, reviewSchema } = require("./schemas");
+const { findById } = require("./models/campground");
+const Review = require("./models/review");
 
 
 mongoose.connect("mongodb://localhost:27017/yelp-camp", { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true })
@@ -35,6 +37,10 @@ app.set("view engine", "ejs");
 app.use(methodOverride('_method'));
 app.use(bodyParser.urlencoded({ extended: true }));
 
+
+// Test Joi validation via postman to!
+// URL-encoded is validated via our html setup but you could
+// still post information via other routes
 const validateCampground = (req, res, next) => {
     const { error } = campgroundSchema.validate(req.body);
     if (error) {
@@ -49,11 +55,28 @@ const validateCampground = (req, res, next) => {
     }
 };
 
+const validateReview = (req, res, next) => {
+    const { error } = reviewSchema.validate(req.body);
+    if (error) {
+        //error.details is an array of objects, we need to map it and 
+        // create a single string message
+        const message = error.details.map(el => el.message).join(",");
+        throw new expressError(message, 400);
+    }
+    else {
+        // crucial to call next to pass to next functions in router
+        next();
+    }
+}
+
 
 
 app.get("/", (req, res) => {
     res.render("home");
 });
+
+
+// CAMPGROUNDS
 
 app.get("/campgrounds", wrapAsync(async (req, res) => {
     const campgrounds = await Campground.find({});
@@ -77,14 +100,14 @@ app.post("/campgrounds", validateCampground, wrapAsync(async (req, res, next) =>
 // Show a campground
 app.get("/campgrounds/:id", wrapAsync(async (req, res) => {
     const { id } = req.params;
-    const campground = await Campground.findById(id);
+    const campground = await Campground.findById(id).populate("reviews");
     res.render("campgrounds/show", { campground });
 }));
 
 // Edit a campground
 app.get("/campgrounds/:id/edit", wrapAsync(async (req, res) => {
     const { id } = req.params;
-    const campground = await Campground.findById(id);
+    const campground = await (await Campground.findById(id));
     res.render("campgrounds/edit", { campground });
 }));
 
@@ -97,8 +120,31 @@ app.put("/campgrounds/:id", validateCampground, wrapAsync(async (req, res) => {
 // Delete a campground
 app.delete("/campgrounds/:id", wrapAsync(async (req, res) => {
     const { id } = req.params;
+    // When deleting, a middleware created in the campgrounds model
+    // deletes all reviews linked to the campground.
     await Campground.findByIdAndDelete(id);
     res.redirect("/campgrounds");
+}));
+
+
+// REVIEWS
+
+app.post("/campgrounds/:id/reviews", validateReview, wrapAsync(async (req, res) => {
+    const { id } = req.params;
+    const campground = await Campground.findById(id);
+    const review = new Review(req.body.review);
+    campground.reviews.push(review);
+    const reviewsaved = await review.save();
+    const campgroundsaved = await campground.save();
+    console.log(reviewsaved, campgroundsaved);
+    res.redirect(`/campgrounds/${id}`);
+}));
+
+app.delete("/campgrounds/:id/reviews/:reviewId", wrapAsync(async (req, res) => {
+    const { id, reviewId } = req.params;
+    await Campground.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+    await Review.findByIdAndDelete(reviewId);
+    res.redirect(`/campgrounds/${id}`);
 }));
 
 // For every single kind of request and for every path...
