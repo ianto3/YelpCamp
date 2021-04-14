@@ -17,6 +17,7 @@ const expressError = require("./utils/ExpressError");
 const campgrounds = require("./routes/campgrounds");
 const reviews = require("./routes/reviews");
 const session = require("express-session");
+const flash = require("connect-flash");
 
 
 mongoose.connect("mongodb://localhost:27017/yelp-camp", {
@@ -42,7 +43,7 @@ app.set("view engine", "ejs");
 // middleware
 app.use(methodOverride('_method'));
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use(flash());
 
 // Serve static files
 app.use(express.static(path.join(__dirname, "public")));
@@ -64,8 +65,19 @@ const sessionConfig = {
 };
 app.use(session(sessionConfig));
 
+// flash middleware
+// Under every request we take whatever is in req.flash under success
+// and pass it to locals under the key "success".
+// boilertemplate
+app.use((req, res, next) => {
+    res.locals.success = req.flash("success");
+    res.locals.error = req.flash("error");
+    next();
+});
+
 // Establish our routes
-// Note: the routes must come AFTER the above session code
+// Note: the routes must come AFTER the above session code and flash
+
 app.use("/campgrounds", campgrounds);
 app.use("/campgrounds/:id/reviews", reviews);
 

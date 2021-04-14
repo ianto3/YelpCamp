@@ -43,6 +43,7 @@ router.get("/new", (req, res) => {
 router.post("/", validateCampground, wrapAsync(async (req, res, next) => {
     const newCamp = new Campground(req.body.campground);
     await newCamp.save();
+    req.flash("success", "Successfully made a new campground!");
     res.redirect(`/campgrounds/${newCamp._id}`);
 }));
 
@@ -50,6 +51,12 @@ router.post("/", validateCampground, wrapAsync(async (req, res, next) => {
 router.get("/:id", wrapAsync(async (req, res) => {
     const { id } = req.params;
     const campground = await Campground.findById(id).populate("reviews");
+    // just in case you access a url to a specific campground that doesn't
+    // exist anymore, handle the problem
+    if (!campground) {
+        req.flash("error", "Cannot find that campground!");
+        return res.redirect("/campgrounds");
+    };
     res.render("campgrounds/show", { campground });
 }));
 
@@ -57,12 +64,17 @@ router.get("/:id", wrapAsync(async (req, res) => {
 router.get("/:id/edit", wrapAsync(async (req, res) => {
     const { id } = req.params;
     const campground = await (await Campground.findById(id));
+    if (!campground) {
+        req.flash("error", "Cannot find that campground!");
+        return res.redirect("/campgrounds");
+    };
     res.render("campgrounds/edit", { campground });
 }));
 
 router.put("/:id", validateCampground, wrapAsync(async (req, res) => {
     const { id } = req.params;
     const updatedCampground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
+    req.flash("success", "Successfully updated a campground!");
     res.redirect(`/campgrounds/${updatedCampground._id}`);
 }));
 
