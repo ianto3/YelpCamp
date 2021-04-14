@@ -16,9 +16,15 @@ const expressError = require("./utils/ExpressError");
 // Import our routes
 const campgrounds = require("./routes/campgrounds");
 const reviews = require("./routes/reviews");
+const session = require("express-session");
 
 
-mongoose.connect("mongodb://localhost:27017/yelp-camp", { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true })
+mongoose.connect("mongodb://localhost:27017/yelp-camp", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+    useFindAndModify: false
+})
     .then(() => {
         console.log("Mongoose Activated!");
     })
@@ -26,6 +32,7 @@ mongoose.connect("mongodb://localhost:27017/yelp-camp", { useNewUrlParser: true,
         console.log("Oh oh...");
         console.log(err);
     });
+
 
 // tell express we want to use ejs-mate
 app.engine("ejs", ejsMate);
@@ -36,7 +43,29 @@ app.set("view engine", "ejs");
 app.use(methodOverride('_method'));
 app.use(bodyParser.urlencoded({ extended: true }));
 
+
+// Serve static files
+app.use(express.static(path.join(__dirname, "public")));
+
+// creating sessions
+const sessionConfig = {
+    secret: "thisshouldbeabettersecret",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        // For security reasons...
+        httpOnly: true,
+        // Set cookies to expire in a week or else the person could
+        // be logged in forever through his device.
+        // Date.now() is in milliseconds, converting to week...
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+        maxAge: 1000 * 60 * 60 * 24 * 7
+    }
+};
+app.use(session(sessionConfig));
+
 // Establish our routes
+// Note: the routes must come AFTER the above session code
 app.use("/campgrounds", campgrounds);
 app.use("/campgrounds/:id/reviews", reviews);
 
