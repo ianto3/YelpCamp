@@ -5,6 +5,7 @@ const wrapAsync = require("../utils/WrapAsync");
 const expressError = require("../utils/ExpressError");
 const Campground = require("../models/campground");
 const { campgroundSchema } = require("../schemas");
+const isLoggedIn = require("../middleware");
 
 // Test Joi validation via postman to!
 // URL-encoded is validated via our html setup but you could
@@ -36,11 +37,13 @@ router.get("/", wrapAsync(async (req, res) => {
 // render a form
 // note: router.get("/campgrounds/new") must be placed before router.get("/campgrounds/:id" in script
 // or else it will think "new" IS an id...order matters here
-router.get("/new", (req, res) => {
+
+router.get("/new", isLoggedIn, (req, res) => {
     res.render("campgrounds/new");
 });
 
-router.post("/", validateCampground, wrapAsync(async (req, res, next) => {
+// isLoggedIn here protects the route from postman or something that's not the web's form
+router.post("/", isLoggedIn, validateCampground, wrapAsync(async (req, res, next) => {
     const newCamp = new Campground(req.body.campground);
     await newCamp.save();
     req.flash("success", "Successfully made a new campground!");
@@ -61,7 +64,7 @@ router.get("/:id", wrapAsync(async (req, res) => {
 }));
 
 // Edit a campground
-router.get("/:id/edit", wrapAsync(async (req, res) => {
+router.get("/:id/edit", isLoggedIn, wrapAsync(async (req, res) => {
     const { id } = req.params;
     const campground = await (await Campground.findById(id));
     if (!campground) {
@@ -71,7 +74,7 @@ router.get("/:id/edit", wrapAsync(async (req, res) => {
     res.render("campgrounds/edit", { campground });
 }));
 
-router.put("/:id", validateCampground, wrapAsync(async (req, res) => {
+router.put("/:id", isLoggedIn, validateCampground, wrapAsync(async (req, res) => {
     const { id } = req.params;
     const updatedCampground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
     req.flash("success", "Successfully updated a campground!");
@@ -79,7 +82,7 @@ router.put("/:id", validateCampground, wrapAsync(async (req, res) => {
 }));
 
 // Delete a campground
-router.delete("/:id", wrapAsync(async (req, res) => {
+router.delete("/:id", isLoggedIn, wrapAsync(async (req, res) => {
     const { id } = req.params;
     // When deleting, a middleware created in the campgrounds model
     // deletes all reviews linked to the campground.

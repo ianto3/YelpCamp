@@ -12,12 +12,17 @@ const expressError = require("./utils/ExpressError");
 // Joi's import has been commented out, we import it through the schema files
 // in routes.
 // const Joi = require("joi");
-
-// Import our routes
-const campgrounds = require("./routes/campgrounds");
-const reviews = require("./routes/reviews");
 const session = require("express-session");
 const flash = require("connect-flash");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const User = require("./models/user");
+
+
+// Import our routes
+const campgroundRoutes = require("./routes/campgrounds");
+const reviewRoutes = require("./routes/reviews");
+const userRoutes = require("./routes/users");
 
 
 mongoose.connect("mongodb://localhost:27017/yelp-camp", {
@@ -41,12 +46,10 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
 // middleware
+
 app.use(methodOverride('_method'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(flash());
-
-// Serve static files
-app.use(express.static(path.join(__dirname, "public")));
 
 // creating sessions
 const sessionConfig = {
@@ -63,13 +66,45 @@ const sessionConfig = {
         maxAge: 1000 * 60 * 60 * 24 * 7
     }
 };
+// Session must come before passport.session()
 app.use(session(sessionConfig));
+
+app.use(passport.initialize());
+// For persistent login sessions, use passport.session()
+app.use(passport.session());
+// use static authenticate method of model in LocalStrategy
+passport.use(new LocalStrategy(User.authenticate()));
+// use static serialize and deserialize of model for passport session support
+// serialize -> how to store a user in a session
+passport.serializeUser(User.serializeUser());
+// deserialize -> how to get a user out of the session
+passport.deserializeUser(User.deserializeUser());
+
+// Serve static files
+app.use(express.static(path.join(__dirname, "public")));
 
 // flash middleware
 // Under every request we take whatever is in req.flash under success
 // and pass it to locals under the key "success".
-// boilertemplate
+// This can be accessible for example to partials.
+// res.locals -> An object that contains response local variables scoped to 
+// the request, and therefore available only to the view(s) rendered during 
+// that request / response cycle (if any). Otherwise, this property is identical to app.locals.
+// This property is useful for exposing request-level information such as the request path name, 
+// authenticated user, user settings, and so on.
 app.use((req, res, next) => {
+    // req.user is created by passport
+    // if not logged in -> undefined
+    // if logged in -> user doc from mongo (mongo ID, username and email)
+    // console.log(req.user)
+    res.locals.currentUser = req.user;
+    // req.originalUrl has the full path to the last url visited
+    // save in session (for statefulness) where the user was before redirecting
+    // to login, to be able to return him where he was afterwards
+    // If user didn't come directly from login or home page, save last url visited.
+    if (!["/login", "/register", "/"].includes(req.originalUrl)) {
+        req.session.returnTo = req.originalUrl
+    };
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
     next();
@@ -77,9 +112,10 @@ app.use((req, res, next) => {
 
 // Establish our routes
 // Note: the routes must come AFTER the above session code and flash
+app.use("/", userRoutes);
+app.use("/campgrounds", campgroundRoutes);
+app.use("/campgrounds/:id/reviews", reviewRoutes);
 
-app.use("/campgrounds", campgrounds);
-app.use("/campgrounds/:id/reviews", reviews);
 
 app.get("/", (req, res) => {
     res.render("home");
