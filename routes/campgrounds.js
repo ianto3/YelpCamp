@@ -2,28 +2,9 @@ const express = require("express");
 const router = express.Router();
 const wrapAsync = require("../utils/WrapAsync");
 // const mongoose = require("mongoose");
-const expressError = require("../utils/ExpressError");
 const Campground = require("../models/campground");
-const { campgroundSchema } = require("../schemas");
-const isLoggedIn = require("../middleware");
-
-// Test Joi validation via postman to!
-// URL-encoded is validated via our html setup but you could
-// still post information via other routes
-const validateCampground = (req, res, next) => {
-    const { error } = campgroundSchema.validate(req.body);
-    if (error) {
-        //error.details is an array of objects, we need to map it and 
-        // create a single string message
-        const message = error.details.map(el => el.message).join(",");
-        throw new expressError(message, 400);
-    }
-    else {
-        // crucial to call next to pass to next functions in router
-        next();
-    }
-};
-
+const { isLoggedIn, validateCampground, verifyAuthor, } = require("../middleware");
+// const campground = require("../models/campground");
 
 
 // CAMPGROUNDS
@@ -45,6 +26,8 @@ router.get("/new", isLoggedIn, (req, res) => {
 // isLoggedIn here protects the route from postman or something that's not the web's form
 router.post("/", isLoggedIn, validateCampground, wrapAsync(async (req, res, next) => {
     const newCamp = new Campground(req.body.campground);
+    // Save a reference to the author who created the campground.
+    newCamp.author = req.user._id;
     await newCamp.save();
     req.flash("success", "Successfully made a new campground!");
     res.redirect(`/campgrounds/${newCamp._id}`);
@@ -53,7 +36,14 @@ router.post("/", isLoggedIn, validateCampground, wrapAsync(async (req, res, next
 // Show a campground
 router.get("/:id", wrapAsync(async (req, res) => {
     const { id } = req.params;
-    const campground = await Campground.findById(id).populate("reviews");
+    // We populate campgrounds reviews (and their authors) and the author of the campground
+    const campground = await (await Campground.findById(id).populate({
+        // nested populate, we populate the reviews and inside them we populate their authors.
+        path: "reviews",
+        populate: {
+            path: "author"
+        }
+    }).populate("author"));
     // just in case you access a url to a specific campground that doesn't
     // exist anymore, handle the problem
     if (!campground) {
@@ -64,7 +54,7 @@ router.get("/:id", wrapAsync(async (req, res) => {
 }));
 
 // Edit a campground
-router.get("/:id/edit", isLoggedIn, wrapAsync(async (req, res) => {
+router.get("/:id/edit", isLoggedIn, verifyAuthor, wrapAsync(async (req, res) => {
     const { id } = req.params;
     const campground = await (await Campground.findById(id));
     if (!campground) {
@@ -74,7 +64,7 @@ router.get("/:id/edit", isLoggedIn, wrapAsync(async (req, res) => {
     res.render("campgrounds/edit", { campground });
 }));
 
-router.put("/:id", isLoggedIn, validateCampground, wrapAsync(async (req, res) => {
+router.put("/:id", isLoggedIn, verifyAuthor, validateCampground, wrapAsync(async (req, res) => {
     const { id } = req.params;
     const updatedCampground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
     req.flash("success", "Successfully updated a campground!");
@@ -82,11 +72,12 @@ router.put("/:id", isLoggedIn, validateCampground, wrapAsync(async (req, res) =>
 }));
 
 // Delete a campground
-router.delete("/:id", isLoggedIn, wrapAsync(async (req, res) => {
+router.delete("/:id", isLoggedIn, verifyAuthor, wrapAsync(async (req, res) => {
     const { id } = req.params;
     // When deleting, a middleware created in the campgrounds model
     // deletes all reviews linked to the campground.
     await Campground.findByIdAndDelete(id);
+    req.flash("success", "Successfully deleted campground!")
     res.redirect("/campgrounds");
 }));
 
