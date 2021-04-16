@@ -6,6 +6,13 @@ const campgrounds = require("../controllers/campgrounds");
 const Campground = require("../models/campground");
 const { isLoggedIn, validateCampground, verifyAuthor, } = require("../middleware");
 // const campground = require("../models/campground");
+// Multer is a node.js middleware for handling multipart/form-data, which is 
+// primarily used for uploading files.
+const multer = require('multer');
+// For cloudinary we don't indicate the index file since node
+// automatically looks for it in a folder.
+const { storage } = require("../cloudinary");
+const upload = multer({ storage });
 
 
 // CAMPGROUNDS
@@ -13,6 +20,7 @@ const { isLoggedIn, validateCampground, verifyAuthor, } = require("../middleware
 router.route("/")
     .get(wrapAsync(campgrounds.index))
     .post(isLoggedIn,
+        upload.array("images"),
         validateCampground,
         wrapAsync(campgrounds.createCampground));
 
@@ -27,6 +35,7 @@ router.route("/:id")
     // isLoggedIn here protects the route from postman or something that's not the web's form
     .put(isLoggedIn,
         verifyAuthor,
+        upload.array("images"),
         validateCampground,
         wrapAsync(campgrounds.editCampground))
     .delete(isLoggedIn,

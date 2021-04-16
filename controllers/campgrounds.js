@@ -3,6 +3,7 @@
 // with an MVC (Models, Views and Controllers) application.
 
 const Campground = require("../models/campground");
+const { cloudinary } = require("../cloudinary");
 
 module.exports.index = async (req, res) => {
     const campgrounds = await Campground.find({});
@@ -15,6 +16,7 @@ module.exports.renderNewForm = (req, res) => {
 
 module.exports.createCampground = async (req, res, next) => {
     const newCamp = new Campground(req.body.campground);
+    newCamp.images = req.files.map(image => ({ url: image.path, filename: image.filename })); // req.files is created by multer
     // Save a reference to the author who created the campground.
     newCamp.author = req.user._id;
     await newCamp.save();
@@ -54,6 +56,16 @@ module.exports.renderEditForm = async (req, res) => {
 module.exports.editCampground = async (req, res) => {
     const { id } = req.params;
     const updatedCampground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
+    const newImages = req.files.map(image => ({ url: image.path, filename: image.filename }));
+    updatedCampground.images.push(...newImages);
+    await updatedCampground.save()
+    if (req.body.deleteImages) {
+        for (let imageFilename of req.body.deleteImages) {
+            // Delete images in cloudinary
+            await cloudinary.uploader.destroy(imageFilename);
+        }
+        await updatedCampground.updateOne({ $pull: { images: { filename: { $in: req.body.deleteImages } } } });
+    };
     req.flash("success", "Successfully updated a campground!");
     res.redirect(`/campgrounds/${updatedCampground._id}`);
 }

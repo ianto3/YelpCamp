@@ -2,7 +2,8 @@
 <div class="row">
     <h1 class="text-center">Edit Campground</h1>
     <div class="col-6 offset-3">
-        <form action="/campgrounds/<%= campground._id %>?_method=PUT" method="POST" novalidate class="needs-validation">
+        <form action="/campgrounds/<%= campground._id %>?_method=PUT" method="POST" novalidate class="needs-validation"
+            enctype="multipart/form-data">
             <div class="mb-3">
                 <label class="form-label" for="title">Campground's name</label>
                 <!-- by adding name campground[title] it will create an object "campground" in req.body 
@@ -22,12 +23,10 @@
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label" for="image">Campground's Image</label>
-                <input class="form-control" type="text" id="image" name="campground[image]"
-                    placeholder="Insert an image URL" value="<%= campground.image %>" required>
-                <div class="valid-feedback">
-                    Looks good!
-                </div>
+                <!-- <label class="form-label" for="image">Upload more images</label>
+                <input type="file" name="images" multiple> -->
+                <label for="images" class="form-label">Upload images</label>
+                <input class="form-control" type="file" id="images" name="images" multiple>
             </div>
             <div class="mb-3">
                 <label class="form-label" for="price">Campground's price</label>
@@ -48,6 +47,17 @@
                 <div class="valid-feedback">
                     Looks good!
                 </div>
+            </div>
+            <div class="mb-3">
+                <!-- Choose pictures to delete -->
+                <% campground.images.forEach((image, index) => { %>
+                <img src="<%= image.thumbnail %> " class="img-thumbnail" alt="">
+                <div class="form-check-inline">
+                    <!-- With deleteImages[] as name for all, all values will go into the same array -->
+                    <input type="checkbox" id="image-<%= index %>" name="deleteImages[]" value="<%= image.filename %>">
+                </div>
+                <label for="image-<%= index %>">Delete</label>
+                <% }) %>
             </div>
             <div class="mb-3">
                 <button type="submit" class="btn btn-info">Update Campground</button>

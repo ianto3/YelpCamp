@@ -4,7 +4,8 @@
     <div class="col-6 offset-3">
         <!-- add no validate to avoid default html behaviour and let bootstrap take over
             to avoid submitting the form unless validated -->
-        <form action="/campgrounds" method="POST" class="needs-validation" novalidate>
+        <!-- Changing enctype to allow file uploads... -->
+        <form action="/campgrounds" method="POST" class="needs-validation" enctype="multipart/form-data" novalidate>
             <div class="mb-3">
                 <label class="form-label" for="title">Campground's name</label>
                 <!-- by adding name campground[title] it will create an object "campground" in req.body 
@@ -23,13 +24,10 @@
                     Looks good!
                 </div>
             </div>
+            <input type="file" name="images" multiple>
             <div class="mb-3">
-                <label class="form-label" for="image">Campground's Image</label>
-                <input class="form-control" type="text" id="image" name="campground[image]"
-                    placeholder="Insert an image URL" required>
-                <div class="valid-feedback">
-                    Looks good!
-                </div>
+                <label for="images" class="form-label">Upload images</label>
+                <input class="form-control" type="file" id="images" name="images" multiple>
             </div>
             <div class="mb-3">
                 <label class="form-label" for="price">Campground's price</label>

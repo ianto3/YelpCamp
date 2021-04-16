@@ -2,9 +2,22 @@ const mongoose = require("mongoose");
 const Review = require("./review"); // Needed for middleware down below
 const Schema = mongoose.Schema;
 
+// We will nest ImageSchema in CampgroundSchema and create a virtual.
+// A virtual is a property not stored in MongoDB. It's accessed as any
+// other property of  the schema, in this case, campground.images.thumbnail.
+const ImageSchema = new Schema({
+    url: String,
+    filename: String
+});
+
+ImageSchema.virtual("thumbnail").get(function () {
+    // Inserting w_200 in cloudinary links gives us a picture 200px wide.
+    return this.url.replace("/upload", "/upload/w_200");
+});
+
 const CampgroundSchema = new Schema({
     title: String,
-    image: String,
+    images: [ImageSchema],
     price: Number,
     description: String,
     location: String,

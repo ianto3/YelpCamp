@@ -1,3 +1,9 @@
+// By default we're always running in devolopment.
+// Load API secrets from .env.
+if (process.env.NODE_ENV !== "production") {
+    require("dotenv").config();
+};
+
 const express = require("express");
 const app = express();
 const ejs = require("ejs");
