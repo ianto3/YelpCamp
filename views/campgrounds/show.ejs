@@ -1,84 +1,99 @@
 <% layout("layouts/boilerplate") %>
-    <div class="row">
-        <div class="col-6">
-            <!-- mb-3 would give us some space if the card reaches
+<link rel="stylesheet" href="/stylesheets/stars.css">
+
+<div class="row">
+    <div class="col-6">
+        <!-- mb-3 would give us some space if the card reaches
             the bottom page footer due to a tall image. -->
-            <div class="card mb-3">
-                <img src="<%= campground.image %>" class="card-img-top" alt="...">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <%= campground.title %>
-                    </h5>
-                    <p class="card-text">
-                        <%= campground.description %>
-                    </p>
-                </div>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item text-muted">
-                        <%= campground.location %>
-                    </li>
-                    <li class="list-group-item">
-                        Posted by: <%= campground.author.username %>
-                    </li>
-                    <li class="list-group-item">
-                        <%= campground.price %>€ / night
-                    </li>
-                </ul>
-                <!-- Hide edit and delete buttons to everyone except author. -->
-                <% if(currentUser && campground.author.equals(currentUser._id)) { %>
-                    <div class="card-body">
-                        <a class="card-link btn btn-warning" href="/campgrounds/<%= campground._id %>/edit">Edit
-                            campground</a>
-                        <form class="d-inline" action="/campgrounds/<%= campground._id%>?_method=DELETE" method="POST">
-                            <button class="btn btn-danger">Delete campground</button>
-                        </form>
-                    </div>
-                    <% } %>
-                        <div class="card-footer text-muted"><a class="card-link" href="/campgrounds">All
-                                Campgrounds</a>
-                        </div>
+        <div class="card mb-3">
+            <img src="<%= campground.image %>" class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <%= campground.title %>
+                </h5>
+                <p class="card-text">
+                    <%= campground.description %>
+                </p>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item text-muted">
+                    <%= campground.location %>
+                </li>
+                <li class="list-group-item">
+                    Posted by: <%= campground.author.username %>
+                </li>
+                <li class="list-group-item">
+                    <%= campground.price %>€ / night
+                </li>
+            </ul>
+            <!-- Hide edit and delete buttons to everyone except author. -->
+            <% if(currentUser && campground.author.equals(currentUser._id)) { %>
+            <div class="card-body">
+                <a class="card-link btn btn-warning" href="/campgrounds/<%= campground._id %>/edit">Edit
+                    campground</a>
+                <form class="d-inline" action="/campgrounds/<%= campground._id%>?_method=DELETE" method="POST">
+                    <button class="btn btn-danger">Delete campground</button>
+                </form>
+            </div>
+            <% } %>
+            <div class="card-footer text-muted"><a class="card-link" href="/campgrounds">All
+                    Campgrounds</a>
             </div>
         </div>
-        <div class="col-6">
-            <% if(currentUser) { %>
-                <h2>Leave a Review</h2>
-                <!-- novalidate in form is necessary if you want to use bootstrap styles for validation -->
-                <form action="/campgrounds/<%= campground._id %>/reviews" method="POST" class="mb-3 needs-validation"
-                    novalidate>
-                    <div class="mb-3">
-                        <label for="rating" class="form-label">Rating</label>
-                        <input name="review[rating]" id="rating" class="form-range" type="range" min="1" max="5">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="reviewbody">Review</label>
-                        <textarea class="form-control" name="review[body]" id="reviewbody" cols="30" rows="3"
-                            required></textarea>
-                    </div>
-                    <div class="valid-feedback">
-                        Looks good!
-                    </div>
-                    <button class="btn btn-success">Submit</button>
+    </div>
+    <div class="col-6">
+        <% if(currentUser) { %>
+        <h2>Leave a Review</h2>
+        <!-- novalidate in form is necessary if you want to use bootstrap styles for validation -->
+        <form action="/campgrounds/<%= campground._id %>/reviews" method="POST" class="mb-3 needs-validation"
+            novalidate>
+            <div class="mt-3">
+                <fieldset class="starability-fade">
+                    <!-- <legend>Rating:</legend> -->
+                    <input type="radio" id="no-rate" class="input-no-rate" name="rating" value="0" checked
+                        aria-label="No rating." />
+                    <input type="radio" id="first-rate1" name="review[rating]" value="1" />
+                    <label for="first-rate1" title="Terrible">1 star</label>
+                    <input type="radio" id="first-rate2" name="review[rating]" value="2" />
+                    <label for="first-rate2" title="Not good">2 stars</label>
+                    <input type="radio" id="first-rate3" name="review[rating]" value="3" />
+                    <label for="first-rate3" title="Average">3 stars</label>
+                    <input type="radio" id="first-rate4" name="review[rating]" value="4" />
+                    <label for="first-rate4" title="Very good">4 stars</label>
+                    <input type="radio" id="first-rate5" name="review[rating]" value="5" />
+                    <label for="first-rate5" title="Amazing">5 stars</label>
+                </fieldset>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="reviewbody">Review</label>
+                <textarea class="form-control" name="review[body]" id="reviewbody" cols="30" rows="3"
+                    required></textarea>
+            </div>
+            <div class="valid-feedback">
+                Looks good!
+            </div>
+            <button class="btn btn-success">Submit</button>
+        </form>
+        <% } %>
+        <% for (let review of campground.reviews) { %>
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title"><%= review.author.username %>
+                </h5>
+                <!-- The text in p is for accesibility  -->
+                <p class="starability-result" data-rating="<%= review.rating %>">
+                    Rated: <%= review.rating %> stars
+                </p>
+                <p class="card-text">Review: <%= review.body %>
+                </p>
+                <% if(currentUser && review.author.equals(currentUser._id)) { %>
+                <form action="/campgrounds/<%= campground._id %>/reviews/<%= review._id %>?_method=DELETE"
+                    method="POST">
+                    <button class="btn btn-sm btn-danger">Delete Review</button>
                 </form>
                 <% } %>
-                    <% for (let review of campground.reviews) { %>
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <h5 class="card-title">Rating: <%= review.rating %>
-                                </h5>
-                                <h6 class="card-subtitle mb-2 text-muted">
-                                    <%= review.author.username %>
-                                </h6>
-                                <p class="card-text">Review: <%= review.body %>
-                                </p>
-                                <% if(currentUser && review.author.equals(currentUser._id)) { %>
-                                    <form
-                                        action="/campgrounds/<%= campground._id %>/reviews/<%= review._id %>?_method=DELETE"
-                                        method="POST">
-                                        <button class="btn btn-sm btn-danger">Delete Review</button>
-                                    </form>
-                                    <% } %>
-                            </div>
-                        </div>
-                        <% } %>
+            </div>
         </div>
+        <% } %>
     </div>
+</div>

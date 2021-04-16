@@ -1,14 +1,14 @@
 <% layout("layouts/boilerplate") %>
-    <div class="row">
-        <div class="col-8 offset-2" style="overflow-wrap: break-word">
-            <!-- from bootstrap components > alert -->
-            <div class="alert alert-danger" role="alert">
-                <h4 class="alert-heading">
-                    <%= err.message %>
-                </h4>
-                <p>
-                    <%= err.stack %>
-                </p>
-            </div>
+<div class="row">
+    <div class="col-8 offset-2" style="overflow-wrap: break-word">
+        <!-- from bootstrap components > alert -->
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">
+                <%= err.message %>
+            </h4>
+            <p>
+                <%= err.stack %>
+            </p>
         </div>
     </div>
+</div>
