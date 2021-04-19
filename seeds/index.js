@@ -20,12 +20,17 @@ const sample = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Check if we are able to connect to db and create entries
 const seedDB = async () => {
     await Campground.deleteMany({});
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 200; i++) {
         const random1000 = Math.floor(Math.random() * 1000);
         const price = Math.floor(Math.random() * 30) + 10;
         const camp = new Campground({
+            // YOUR USER ID
             author: "60784ebf88a4402b3dbb2404",
             location: `${cities[random1000].city}, ${cities[random1000].state}`,
+            geometry: {
+                type: "Point",
+                coordinates: [cities[random1000].longitude, cities[random1000].latitude]
+            },
             title: `${sample(descriptors)} ${sample(places)}`,
             images: [{
                 url: "https://res.cloudinary.com/dmpc7jecg/image/upload/v1618589086/YelpCamp/mei3ssl0yrbd1wfc3mka.jpg",

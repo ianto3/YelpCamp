@@ -15,12 +15,27 @@ ImageSchema.virtual("thumbnail").get(function () {
     return this.url.replace("/upload", "/upload/w_200");
 });
 
+// To include virtuals in res.json()...
+const opts = { toJSON: { virtuals: true } };
+
 const CampgroundSchema = new Schema({
     title: String,
     images: [ImageSchema],
     price: Number,
     description: String,
     location: String,
+    // Set up GEOJSON with mongoose for mapbox
+    geometry: {
+        type: {
+            type: String,
+            enum: ['Point'], // 'location.type' must be 'Point'
+            required: true
+        },
+        coordinates: {
+            type: [Number],
+            required: true
+        }
+    },
     author: {
         type: Schema.Types.ObjectId,
         ref: "User"
@@ -31,6 +46,12 @@ const CampgroundSchema = new Schema({
             ref: "Review"
         }
     ]
+}, opts);
+
+CampgroundSchema.virtual("properties.popUpMarkup").get(function () {
+    // Inserting w_200 in cloudinary links gives us a picture 200px wide.
+    return `<strong><a href="/campgrounds/${this._id}">${this.title}</a></strong>
+    <p>${this.description.substring(0, 30)}...</p>`;
 });
 
 // By creating a middleware we can use it to delete all orphan

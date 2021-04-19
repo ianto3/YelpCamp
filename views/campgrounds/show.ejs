@@ -61,6 +61,7 @@
         </div>
     </div>
     <div class="col-6">
+        <div id='map' style='width: 400px; height: 300px;'></div>
         <% if(currentUser) { %>
         <h2>Leave a Review</h2>
         <!-- novalidate in form is necessary if you want to use bootstrap styles for validation -->
@@ -116,3 +117,13 @@
         <% } %>
     </div>
 </div>
+
+<script>
+    // Needed to pass on the token to showPageMap JS file at end of file.
+    // We hand off data from the server side  to the client side.
+    const mapToken = '<%- process.env.MAPBOX_TOKEN %>';
+    // Autoformater breaks the next line with VScode..
+    const campground = <%- JSON.stringify(campground) %>;
+</script>
+
+<script src="/javascripts/showPageMap.js"></script>
