@@ -23,6 +23,10 @@ const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./models/user");
+// Avoid MongoDB Operator injections
+const mongoSanitize = require('express-mongo-sanitize');
+// Another security package
+const helmet = require("helmet");
 
 
 // Import our routes
@@ -56,15 +60,24 @@ app.set("view engine", "ejs");
 app.use(methodOverride('_method'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(flash());
+app.use(mongoSanitize());
+
 
 // creating sessions
 const sessionConfig = {
+    // For security...
+    // Change default cookie name "connect.sid" to avoid predetermined targeting.
+    name: "session",
     secret: "thisshouldbeabettersecret",
     resave: false,
     saveUninitialized: true,
     cookie: {
         // For security reasons...
         httpOnly: true,
+        // Secure only lets the cookie work under HTTPS.
+        // localhost is NOT secure, so it will not work in that setting.
+        // Uncomment before deploying.
+        // secure: true,
         // Set cookies to expire in a week or else the person could
         // be logged in forever through his device.
         // Date.now() is in milliseconds, converting to week...
@@ -74,6 +87,53 @@ const sessionConfig = {
 };
 // Session must come before passport.session()
 app.use(session(sessionConfig));
+
+// Must configure contentSecurityPolicy to avoid problems loading backgrounds, maps, etc...
+// Specify all sources that we want to allow.
+const scriptSrcUrls = [
+    "https://stackpath.bootstrapcdn.com/",
+    "https://api.tiles.mapbox.com/",
+    "https://api.mapbox.com/",
+    "https://kit.fontawesome.com/",
+    "https://cdnjs.cloudflare.com/",
+    "https://cdn.jsdelivr.net",
+];
+const styleSrcUrls = [
+    "https://kit-free.fontawesome.com/",
+    "https://stackpath.bootstrapcdn.com/",
+    "https://api.mapbox.com/",
+    "https://api.tiles.mapbox.com/",
+    "https://fonts.googleapis.com/",
+    "https://use.fontawesome.com/",
+    "https://cdn.jsdelivr.net/"
+];
+const connectSrcUrls = [
+    "https://api.mapbox.com/",
+    "https://a.tiles.mapbox.com/",
+    "https://b.tiles.mapbox.com/",
+    "https://events.mapbox.com/",
+];
+const fontSrcUrls = [];
+app.use(
+    helmet.contentSecurityPolicy({
+        directives: {
+            defaultSrc: [],
+            connectSrc: ["'self'", ...connectSrcUrls],
+            scriptSrc: ["'unsafe-inline'", "'self'", ...scriptSrcUrls],
+            styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+            workerSrc: ["'self'", "blob:"],
+            objectSrc: [],
+            imgSrc: [
+                "'self'",
+                "blob:",
+                "data:",
+                "https://res.cloudinary.com/dmpc7jecg/", // Should match our cloudinary name.
+                "https://images.unsplash.com/",
+            ],
+            fontSrc: ["'self'", ...fontSrcUrls],
+        },
+    })
+);
 
 app.use(passport.initialize());
 // For persistent login sessions, use passport.session()
@@ -136,7 +196,6 @@ app.all("*", (req, res, next) => {
 
 // Error handling
 app.use((err, req, res, next) => {
-    console.dir(err);
     const { statusCode = 500, message = "Something went wrong!" } = err;
     if (!err.message) err.message = "Oops, Something went wrong!";
     res.status(statusCode).render("error", { err });
