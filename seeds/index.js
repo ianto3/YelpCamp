@@ -12,6 +12,19 @@ mongoose.connect("mongodb://localhost:27017/yelp-camp", { useNewUrlParser: true,
         console.log(err);
     });
 
+// Seed online DB
+// if (process.env.NODE_ENV !== "production") {
+//     require("dotenv").config();
+// };
+
+// const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/yelp-camp';
+
+// mongoose.connect(dbUrl, {
+//     useNewUrlParser: true,
+//     useCreateIndex: true,
+//     useUnifiedTopology: true
+// });
+
 // get a random element from an array
 const sample = (arr) => arr[Math.floor(Math.random() * arr.length)];
 

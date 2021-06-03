@@ -27,6 +27,8 @@ const User = require("./models/user");
 const mongoSanitize = require('express-mongo-sanitize');
 // Another security package
 const helmet = require("helmet");
+const dbUrl = process.env.DB_URL || "mongodb://localhost:27017/yelp-camp";
+const MongoStore = require('connect-mongo');
 
 
 // Import our routes
@@ -34,8 +36,8 @@ const campgroundRoutes = require("./routes/campgrounds");
 const reviewRoutes = require("./routes/reviews");
 const userRoutes = require("./routes/users");
 
-
-mongoose.connect("mongodb://localhost:27017/yelp-camp", {
+// Connect through mongoose
+mongoose.connect(dbUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
@@ -50,25 +52,42 @@ mongoose.connect("mongodb://localhost:27017/yelp-camp", {
     });
 
 
-// tell express we want to use ejs-mate
+// Tell express we want to use ejs-mate
 app.engine("ejs", ejsMate);
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
-// middleware
+// Middleware
 
 app.use(methodOverride('_method'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(flash());
 app.use(mongoSanitize());
 
+// MongoDB session store
+// MongoDB now has a "sessions" collection.
 
-// creating sessions
+const secret = process.env.SECRET || "thisshouldbeabettersecret";
+
+const store = MongoStore.create({
+    mongoUrl: dbUrl,
+    touchAfter: 24 * 60 * 60,
+    crypto: {
+        secret
+    }
+});
+
+store.on("error", function (ev) {
+    console.log("Store Error", ev)
+})
+
+// Creating sessions
 const sessionConfig = {
+    store,
     // For security...
     // Change default cookie name "connect.sid" to avoid predetermined targeting.
     name: "session",
-    secret: "thisshouldbeabettersecret",
+    secret,
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -201,6 +220,8 @@ app.use((err, req, res, next) => {
     res.status(statusCode).render("error", { err });
 });
 
-app.listen(3000, () => {
-    console.log("Listening...");
+// PORT will be passed by heroku
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Listening from port ${port}...`);
 });
